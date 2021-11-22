@@ -8,7 +8,7 @@ RED = [255, 0, 0]
 GREEN = [0, 255, 0]
 BLUE = [0, 0, 255]
 WHITE = [255, 255, 255]
-
+FOOD_COL = [200, 200, 100]
 
 def __neuron_activation(x):
     return 1 / (1 + np.exp(-x))
@@ -37,44 +37,51 @@ def matrix_feed_forward_calc(x, w, b):
 
 
 class Bacteria:
-    def __init__(self, screen: pygame.Surface):
+    def __init__(self, screen: pygame.Surface, x, y, size, dmg, defence, eff):
         self.screen = screen
         self.sc_w = screen.get_width()
         self.sc_h = screen.get_height()
-        self.size = 20
-        self.defence = 1
-        self.damage = 1
-        self.food = 1
-        self.color = GREEN
-        self.x = randint(0, self.sc_w)
-        self.y = randint(0, self.sc_h)
+        self.size = size
+        self.defence = defence
+        self.damage = dmg
+        self.efficiency = eff
+        self.nn = BacteriaNN([9, 5, 2])
+
+        max_stat = max(self.damage, self.efficiency, self.defence)
+        self.color = [self.damage / max_stat * 255, self.efficiency / max_stat * 255, self.defence / max_stat * 255]
+        self.x = x
+        self.y = y
         self.vx = 0
         self.vy = 0
 
     def draw(self):
-        pygame.draw.circle(self.screen, self.color, (self.x, self.y), self.size)
+        pygame.draw.circle(self.screen, self.color, (self.x, self.sc_h - self.y), self.size)
 
     def move(self):
-        if self.x >= self.sc_w - self.size:
-            self.vx = -self.vx
-            self.x = self.sc_w - self.size - 1
-        if self.y >= self.sc_h - self.size:
-            self.y = self.sc_h - self.size - 1
-        self.vy = self.vy - 1
+        decision = self.nn.think()
+        self.vx = decision[0]
+        self.vy = decision[1]
         self.x += self.vx
-        self.y -= self.vy
+        self.y += self.vy
+        if self.x > self.sc_w:
+            self.x = self.sc_w
+        if self.x < 0:
+            self.x = 0
+        if self.y > self.sc_h:
+            self.y = self.sc_h
+        if self.y < 0:
+            self.y = 0
 
 
 class Food:
-    def __init__(self, screen: pygame.Surface):
+    def __init__(self, screen: pygame.Surface, x, y):
         self.screen = screen
-        self.size = 2
-        self.color = GREEN
-        self.x = randint(0, self.sc_w)
-        self.y = randint(0, self.sc_h)
+        self.color = FOOD_COL
+        self.x = x
+        self.y = y
 
     def draw(self):
-        pygame.draw.circle(self.screen, self.color, (self.x, self.y), self.size)
+        pygame.draw.circle(self.screen, self.color, (self.x, self.y), 2)
 
 
 class BacteriaNN:
