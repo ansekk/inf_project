@@ -10,6 +10,7 @@ BLUE = [0, 0, 255]
 WHITE = [255, 255, 255]
 FOOD_COL = [200, 200, 100]
 
+
 def __neuron_activation(x):
     return 1 / (1 + np.exp(-x))
 
@@ -19,8 +20,8 @@ def create_nn(layers):
     biases = []
 
     for i in range(len(layers) - 1):
-        weights.append(np.random.sample((layers[i + 1], layers[i])))
-        biases.append(np.random.sample(layers[i + 1]))
+        weights.append(2 * (np.random.sample((layers[i + 1], layers[i])) - 0.5))
+        biases.append((np.random.sample(layers[i + 1]) - 0.5))
 
     return [weights, biases]
 
@@ -45,10 +46,11 @@ class Bacteria:
         self.defence = defence
         self.damage = dmg
         self.efficiency = eff
+        self.hunger = 0
         self.nn = BacteriaNN([9, 5, 2])
 
         max_stat = max(self.damage, self.efficiency, self.defence)
-        self.color = [self.damage / max_stat * 255, self.efficiency / max_stat * 255, self.defence / max_stat * 255]
+        self.color = [int(self.damage / max_stat * 255), int(self.efficiency / max_stat * 255), int(self.defence / max_stat * 255)]
         self.x = x
         self.y = y
         self.vx = 0
@@ -57,31 +59,44 @@ class Bacteria:
     def draw(self):
         pygame.draw.circle(self.screen, self.color, (self.x, self.sc_h - self.y), self.size)
 
-    def move(self):
-        decision = self.nn.think()
-        self.vx = decision[0]
-        self.vy = decision[1]
+    def move(self, inp_info):
+        decision = self.nn.think(inp_info)
+        self.vx = (4 * (decision[0] - 0.5))
+        self.vy = (4 * (decision[1] - 0.5))
         self.x += self.vx
         self.y += self.vy
         if self.x > self.sc_w:
-            self.x = self.sc_w
+            self.x -= self.sc_w
         if self.x < 0:
-            self.x = 0
+            self.x += self.sc_w
         if self.y > self.sc_h:
-            self.y = self.sc_h
+            self.y -= self.sc_h
         if self.y < 0:
-            self.y = 0
+            self.y += self.sc_h
+
+    def mutate(self):
+        if random.random() < 0.5:
+            self.size += random.randint(-1, 1)
+        if random.random() < 0.5:
+            self.damage += random.randint(-1, 1)
+        if random.random() < 0.5:
+            self.defence += random.randint(-1, 1)
+        if random.random() < 0.5:
+            self.efficiency += random.randint(-1, 1)
+        self.nn.mutate()
 
 
 class Food:
     def __init__(self, screen: pygame.Surface, x, y):
         self.screen = screen
         self.color = FOOD_COL
+        self.sc_w = screen.get_width()
+        self.sc_h = screen.get_height()
         self.x = x
         self.y = y
 
     def draw(self):
-        pygame.draw.circle(self.screen, self.color, (self.x, self.y), 2)
+        pygame.draw.circle(self.screen, self.color, (self.x, self.sc_h - self.y), 2)
 
 
 class BacteriaNN:
