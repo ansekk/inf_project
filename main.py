@@ -142,6 +142,9 @@ while not finished:
 
             food_arr.append(Food(screen, new_food_x, new_food_y))
 
+    if len(bacteria_arr) == 0:
+        bacteria_arr.append(Bacteria(screen, WIDTH // 2, HEIGHT // 2, 10, 0, 0, 1))
+
     for bact in bacteria_arr:
         bact.hunger += 1
         if bact.hunger >= 2000 + 100 * bact.efficiency:
@@ -149,21 +152,21 @@ while not finished:
 
         food_mc = calculate_food_mass_center(bact.x, bact.y)
         rgb_mc = calculate_bacterias_mass_center(bact.x, bact.y)
-        bact.move([food_mc[0] - bact.x, food_mc[1] - bact.y,
-                   rgb_mc[0][0] - bact.x, rgb_mc[0][1] - bact.y,
-                   rgb_mc[1][0] - bact.x, rgb_mc[1][1] - bact.y,
-                   rgb_mc[2][0] - bact.x, rgb_mc[2][1] - bact.y,
+        bact.move([(food_mc[0] - bact.x)*0.1, (food_mc[1] - bact.y)*0.1,
+                    (rgb_mc[0][0] - bact.x)*0.1, (rgb_mc[0][1] - bact.y)*0.1,
+                    (rgb_mc[1][0] - bact.x)*0.1, (rgb_mc[1][1] - bact.y)*0.1,
+                    (rgb_mc[2][0] - bact.x)*0.1, (rgb_mc[2][1] - bact.y)*0.1,
                    math.sin(clock.get_rawtime())])
 
         # Food consumption
         for food in food_arr:
             d = ((bact.x - food.x)**2 + (bact.y - food.y)**2)**0.5
             if d < bact.size + 2:
-                bact.hunger -= 600 * bact.efficiency
+                bact.hunger -= 300 * bact.efficiency
                 food_arr.remove(food)
 
         # Reproduction
-        if bact.hunger < -200:
+        if bact.hunger < -200 and len(bacteria_arr) <= 70:
             bact.hunger = 0
 
             reproduction_angle = randint(0, 360) / 180 * math.pi

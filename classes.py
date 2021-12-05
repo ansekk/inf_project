@@ -76,13 +76,21 @@ class Bacteria:
 
     def mutate(self):
         if random.random() < 0.5:
-            self.size += random.randint(-1, 1)
+            self.size += 2 * random.randint(-1, 1)
+            if self.size < 0:
+                self.size = -self.size
         if random.random() < 0.5:
             self.damage += random.randint(-1, 1)
+            if self.damage < 0:
+                self.damage = -self.damage
         if random.random() < 0.5:
             self.defence += random.randint(-1, 1)
+            if self.defence < 0:
+                self.defence = -self.defence
         if random.random() < 0.5:
             self.efficiency += random.randint(-1, 1)
+            if self.efficiency < 0:
+                self.efficiency = -self.efficiency
         self.nn.mutate()
 
 
