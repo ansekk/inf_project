@@ -49,7 +49,7 @@ class Bacteria:
         self.hunger = 0
         self.nn = BacteriaNN([9, 5, 2])
 
-        max_stat = max(self.damage, self.efficiency, self.defence)
+        max_stat = max(self.damage, self.efficiency, self.defence, 1)
         self.color = [int(self.damage / max_stat * 255), int(self.efficiency / max_stat * 255), int(self.defence / max_stat * 255)]
         self.x = x
         self.y = y
@@ -91,6 +91,8 @@ class Bacteria:
             self.efficiency += random.randint(-1, 1)
             if self.efficiency < 0:
                 self.efficiency = -self.efficiency
+        max_stat = max(self.damage, self.efficiency, self.defence, 1)
+        self.color = [int(self.damage / max_stat * 255), int(self.efficiency / max_stat * 255), int(self.defence / max_stat * 255)]
         self.nn.mutate()
 
 

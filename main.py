@@ -117,6 +117,8 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 finished = False
+paused = False
+selected_bact = None
 bacteria_arr.append(Bacteria(screen, WIDTH//2, HEIGHT//2, 10, 0, 0, 1))
 main_font = pygame.font.Font(None, 20)
 
@@ -133,90 +135,124 @@ while not finished:
     fps_text = main_font.render(str(round(clock.get_fps(), 2)), True, [0, 0, 0])
     screen.blit(fps_text, (10, 10))
 
-    if len(food_arr) < 200:
-        if food_spawn_cd_current > 0:
-            food_spawn_cd_current -= 1
-        else:
-            food_spawn_cd_current = food_spawn_cd
+    if selected_bact is not None:
+        dmg_text = main_font.render("Damage: " + str(selected_bact.damage), True, [0, 0, 0])
+        defence_text = main_font.render("Defence: " + str(selected_bact.defence), True, [0, 0, 0])
+        efficiency_text = main_font.render("Efficiency: " + str(selected_bact.efficiency), True, [0, 0, 0])
+        screen.blit(dmg_text, (900, 10))
+        screen.blit(defence_text, (900, 22))
+        screen.blit(efficiency_text, (900, 34))
 
-            new_food_x = randint(0, WIDTH)
-            new_food_y = randint(0, HEIGHT)
+    if not paused:
+        if len(food_arr) < 200:
+            if food_spawn_cd_current > 0:
+                food_spawn_cd_current -= 1
+            else:
+                food_spawn_cd_current = food_spawn_cd
 
-            food_arr.append(Food(screen, new_food_x, new_food_y))
+                new_food_x = randint(0, WIDTH)
+                new_food_y = randint(0, HEIGHT)
 
-    if len(bacteria_arr) == 0:
-        bacteria_arr.append(Bacteria(screen, WIDTH // 2, HEIGHT // 2, 10, 0, 0, 1))
-        print("Все сдохли, новая генерация")
+                food_arr.append(Food(screen, new_food_x, new_food_y))
 
-    for bact in bacteria_arr:
-        bact.hunger += (bact.damage + bact.efficiency + bact.defence) * 0.5
-        if bact.hunger >= 2000 + 100 * bact.efficiency:
-            particle_arr.append([bact.x, bact.y, clock.get_fps(), bact.size, BLACK])
-            bacteria_arr.remove(bact)
+        if len(bacteria_arr) == 0:
+            bacteria_arr.append(Bacteria(screen, WIDTH // 2, HEIGHT // 2, 10, 0, 0, 1))
+            print("Все сдохли, новая генерация")
 
-        food_mc = calculate_food_mass_center(bact.x, bact.y)
-        rgb_mc = calculate_bacterias_mass_center(bact.x, bact.y)
-        bact.move([(food_mc[0] - bact.x)*0.1, (food_mc[1] - bact.y)*0.1,
-                    (rgb_mc[0][0] - bact.x)*0.1, (rgb_mc[0][1] - bact.y)*0.1,
-                    (rgb_mc[1][0] - bact.x)*0.1, (rgb_mc[1][1] - bact.y)*0.1,
-                    (rgb_mc[2][0] - bact.x)*0.1, (rgb_mc[2][1] - bact.y)*0.1,
-                   math.sin(clock.get_rawtime())])
+        selected_bact = None
 
-        # antibiotics damage
+        for bact in bacteria_arr:
 
-        if bact.x > 0.95 * WIDTH or bact.x < 0.05 * WIDTH or bact.y < 0.05 * HEIGHT or bact.y > 0.95 * HEIGHT:
-            bact.hunger += 12.5/(bact.defence + 1)
-        elif bact.x > 0.9 * WIDTH:
-            bact.hunger += 15/(bact.defence + 1)
-        elif bact.x > 0.8 * WIDTH:
-            bact.hunger += 13/(bact.defence + 1)
-        elif bact.x > 0.7 * WIDTH:
-            bact.hunger += 11/(bact.defence + 1)
-        elif bact.x > 0.6 * WIDTH:
-            bact.hunger += 8/(bact.defence + 1)
-        elif bact.x > 0.5 * WIDTH:
-            bact.hunger += 6/(bact.defence + 1)
+            # Mouse selection
 
-        # Food consumption
-        for food in food_arr:
-            d = ((bact.x - food.x)**2 + (bact.y - food.y)**2)**0.5
-            if d < bact.size + 2:
-                bact.hunger -= 400 * bact.efficiency
-                food_arr.remove(food)
+            if ((bact.x - mouse_pos[0]) ** 2 + (bact.y - HEIGHT + mouse_pos[1]) ** 2) ** 0.5 < bact.size:
+                selected_bact = bact
 
-        # Bacteria interaction
-        for bact2 in bacteria_arr:
-            if bact2 == bact:
-                continue
-            d = ((bact.x - bact2.x)**2 + (bact.y - bact2.y)**2)**0.5
-            if d < bact.size + bact2.size and bact.damage > 0:
-                bact2.hunger += 20 * bact.damage/(bact2.defence + 1)
-                bact.hunger -= bact.efficiency * bact.damage/(bact2.defence + 1)
-                if bact2.hunger >= 2000 + 100 * bact2.efficiency:
-                    particle_arr.append([bact2.x, bact2.y, clock.get_fps(), bact2.size, RED])
+            # Hunger
 
-        # Reproduction
-        if bact.hunger < -200 and len(bacteria_arr) <= 50:
-            bact.hunger = 0
+            bact.hunger += (bact.damage + bact.efficiency + bact.defence) * 0.5
+            if bact.hunger >= 2000 + 100 * bact.efficiency:
+                particle_arr.append([bact.x, bact.y, clock.get_fps(), bact.size, BLACK])
+                bacteria_arr.remove(bact)
 
-            reproduction_angle = randint(0, 360) / 180 * math.pi
-            rep_cos = math.cos(reproduction_angle)
-            rep_sin = math.sin(reproduction_angle)
+            # Movement
 
-            new_x = bact.x + (2 * bact.size + 5) * rep_cos
-            new_y = bact.y + (2 * bact.size + 5) * rep_sin
+            food_mc = calculate_food_mass_center(bact.x, bact.y)
+            rgb_mc = calculate_bacterias_mass_center(bact.x, bact.y)
+            bact.move([(food_mc[0] - bact.x)*0.1, (food_mc[1] - bact.y)*0.1,
+                        (rgb_mc[0][0] - bact.x)*0.1, (rgb_mc[0][1] - bact.y)*0.1,
+                        (rgb_mc[1][0] - bact.x)*0.1, (rgb_mc[1][1] - bact.y)*0.1,
+                        (rgb_mc[2][0] - bact.x)*0.1, (rgb_mc[2][1] - bact.y)*0.1,
+                       math.sin(clock.get_rawtime())])
 
-            new_bact = Bacteria(screen, new_x, new_y, bact.size, bact.damage, bact.defence, bact.efficiency)
-            if random.random() < 0.2:
-                new_bact.mutate()
-            bacteria_arr.append(new_bact)
+            # antibiotics damage
 
-    # particle clearing
+            if bact.x > 0.95 * WIDTH or bact.x < 0.05 * WIDTH or bact.y < 0.05 * HEIGHT or bact.y > 0.95 * HEIGHT:
+                bact.hunger += 12.5/(bact.defence + 1)
+            """elif bact.x > 0.9 * WIDTH:
+                bact.hunger += 15/(bact.defence + 1)
+            elif bact.x > 0.8 * WIDTH:
+                bact.hunger += 13/(bact.defence + 1)
+            elif bact.x > 0.7 * WIDTH:
+                bact.hunger += 11/(bact.defence + 1)
+            elif bact.x > 0.6 * WIDTH:
+                bact.hunger += 8/(bact.defence + 1)
+            elif bact.x > 0.5 * WIDTH:
+                bact.hunger += 6/(bact.defence + 1)"""
 
-    for particle in particle_arr:
-        particle[2] -= 1
-        if particle[2] <= 0:
-            particle_arr.remove(particle)
+            # Food consumption
+
+            for food in food_arr:
+                d = ((bact.x - food.x)**2 + (bact.y - food.y)**2)**0.5
+                if d < bact.size + 2:
+                    bact.hunger -= 400 * bact.efficiency
+                    food_arr.remove(food)
+
+            # Bacteria interaction
+
+            for bact2 in bacteria_arr:
+                if bact2 == bact:
+                    continue
+                d = ((bact.x - bact2.x)**2 + (bact.y - bact2.y)**2)**0.5
+                if d < bact.size + bact2.size and bact.damage > 0:
+                    bact2.hunger += 25 * bact.damage/(bact2.defence + 1)
+                    bact.hunger -= 20 * bact.efficiency * bact.damage/(bact2.defence + 1)
+                    if bact2.hunger >= 2000 + 100 * bact2.efficiency:
+                        particle_arr.append([bact2.x, bact2.y, clock.get_fps(), bact2.size, RED])
+                        bacteria_arr.remove(bact2)
+
+            # Reproduction
+
+            if bact.hunger < -200 and len(bacteria_arr) <= 50:
+                bact.hunger = 0
+
+                reproduction_angle = randint(0, 360) / 180 * math.pi
+                rep_cos = math.cos(reproduction_angle)
+                rep_sin = math.sin(reproduction_angle)
+
+                new_x = bact.x + (2 * bact.size + 5) * rep_cos
+                new_y = bact.y + (2 * bact.size + 5) * rep_sin
+
+                new_bact = Bacteria(screen, new_x, new_y, bact.size, bact.damage, bact.defence, bact.efficiency)
+                if random.random() < 0.2:
+                    new_bact.mutate()
+                bacteria_arr.append(new_bact)
+
+        # particle clearing
+
+        for particle in particle_arr:
+            particle[2] -= 1
+            if particle[2] <= 0:
+                particle_arr.remove(particle)
+
+    else:
+
+        selected_bact = None
+
+        for bact in bacteria_arr:
+
+            if ((bact.x - mouse_pos[0]) ** 2 + (bact.y - HEIGHT + mouse_pos[1]) ** 2) ** 0.5 < bact.size:
+                selected_bact = bact
 
     # Rendering
 
@@ -242,7 +278,7 @@ while not finished:
             mouse_pos[1] = event.pos[1]
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                rendering = False
+                paused = True
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
-                rendering = True
+                paused = False
