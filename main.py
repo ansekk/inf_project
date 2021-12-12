@@ -130,18 +130,23 @@ for i in range(100):
 
 while not finished:
     screen.fill(BG_COL)
+    pygame.draw.rect(screen, [100, 100, 190], [(0.5 * WIDTH, 0), (0.6 * WIDTH, HEIGHT)], 0)
+    pygame.draw.rect(screen, [100, 100, 210], [(0.6 * WIDTH, 0), (0.7 * WIDTH, HEIGHT)], 0)
+    pygame.draw.rect(screen, [100, 100, 230], [(0.7 * WIDTH, 0), (0.8 * WIDTH, HEIGHT)], 0)
+    pygame.draw.rect(screen, [100, 100, 250], [(0.8 * WIDTH, 0), (0.9 * WIDTH, HEIGHT)], 0)
+    pygame.draw.rect(screen, [100, 100, 255], [(0.9 * WIDTH, 0), (1.0 * WIDTH, HEIGHT)], 0)
+
+    pygame.draw.rect(screen, [50, 50, 255], [(0.95 * WIDTH, 0), (1.0 * WIDTH, HEIGHT)], 0)
+    pygame.draw.rect(screen, [50, 50, 255], [(0, 0), (0.05 * WIDTH, HEIGHT)], 0)
+
+    pygame.draw.rect(screen, [50, 50, 255], [(0, 0), (WIDTH, 0.05 * HEIGHT)], 0)
+    pygame.draw.rect(screen, [50, 50, 255], [(0, 0.95 * HEIGHT), (WIDTH, HEIGHT)], 0)
 
     clock.tick(FPS)
     fps_text = main_font.render(str(round(clock.get_fps(), 2)), True, [0, 0, 0])
     screen.blit(fps_text, (10, 10))
 
-    if selected_bact is not None:
-        dmg_text = main_font.render("Damage: " + str(selected_bact.damage), True, [0, 0, 0])
-        defence_text = main_font.render("Defence: " + str(selected_bact.defence), True, [0, 0, 0])
-        efficiency_text = main_font.render("Efficiency: " + str(selected_bact.efficiency), True, [0, 0, 0])
-        screen.blit(dmg_text, (900, 10))
-        screen.blit(defence_text, (900, 22))
-        screen.blit(efficiency_text, (900, 34))
+
 
     if not paused:
         if len(food_arr) < 200:
@@ -157,7 +162,7 @@ while not finished:
 
         if len(bacteria_arr) == 0:
             bacteria_arr.append(Bacteria(screen, WIDTH // 2, HEIGHT // 2, 10, 0, 0, 1))
-            print("Все сдохли, новая генерация")
+            print("Everyone died. New generation")
 
         selected_bact = None
 
@@ -188,24 +193,24 @@ while not finished:
             # antibiotics damage
 
             if bact.x > 0.95 * WIDTH or bact.x < 0.05 * WIDTH or bact.y < 0.05 * HEIGHT or bact.y > 0.95 * HEIGHT:
-                bact.hunger += 12.5/(bact.defence + 1)
-            """elif bact.x > 0.9 * WIDTH:
-                bact.hunger += 15/(bact.defence + 1)
+                bact.hunger += 40/(bact.defence + 1)
+            elif bact.x > 0.9 * WIDTH:
+                bact.hunger += 30/(bact.defence + 1)
             elif bact.x > 0.8 * WIDTH:
-                bact.hunger += 13/(bact.defence + 1)
+                bact.hunger += 25/(bact.defence + 1)
             elif bact.x > 0.7 * WIDTH:
-                bact.hunger += 11/(bact.defence + 1)
+                bact.hunger += 20/(bact.defence + 1)
             elif bact.x > 0.6 * WIDTH:
-                bact.hunger += 8/(bact.defence + 1)
+                bact.hunger += 15/(bact.defence + 1)
             elif bact.x > 0.5 * WIDTH:
-                bact.hunger += 6/(bact.defence + 1)"""
+                bact.hunger += 10/(bact.defence + 1)
 
             # Food consumption
 
             for food in food_arr:
                 d = ((bact.x - food.x)**2 + (bact.y - food.y)**2)**0.5
                 if d < bact.size + 2:
-                    bact.hunger -= 400 * bact.efficiency
+                    bact.hunger -= 800 * bact.efficiency
                     food_arr.remove(food)
 
             # Bacteria interaction
@@ -265,6 +270,14 @@ while not finished:
 
         for bact in bacteria_arr:
             bact.draw()
+
+    if selected_bact is not None:
+        dmg_text = main_font.render("Damage: " + str(selected_bact.damage), True, [0, 0, 0])
+        defence_text = main_font.render("Defence: " + str(selected_bact.defence), True, [0, 0, 0])
+        efficiency_text = main_font.render("Efficiency: " + str(selected_bact.efficiency), True, [0, 0, 0])
+        screen.blit(dmg_text, (900, 10))
+        screen.blit(defence_text, (900, 22))
+        screen.blit(efficiency_text, (900, 34))
 
     pygame.display.update()
 
