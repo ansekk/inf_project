@@ -1,7 +1,6 @@
 import numpy as np
 import pygame
 import random
-from random import randint
 
 
 RED = [255, 0, 0]
