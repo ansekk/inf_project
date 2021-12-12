@@ -1,6 +1,7 @@
 import pygame
 import math
 import random
+import matplotlib.pyplot as plt
 from random import randint
 
 from classes import Bacteria, Food
@@ -25,6 +26,68 @@ particle_arr = []
 food_spawn_cd = 10
 food_spawn_cd_current = 0
 mouse_pos = [0, 0]
+
+time_data = []
+defence_data = []
+damage_data = []
+efficiency_data = []
+
+average_damage = []
+average_defence = []
+average_efficiency = []
+
+time_counter = 0
+defence_bacts_amount = 0
+damage_bacts_amount = 0
+efficiency_bacts_amount = 0
+
+
+def data_for_plot(bacteria_arr, time_counter, defence_bacts_amount, damage_bacts_amount, efficiency_bacts_amount):
+    for bact in bacteria_arr:
+        if bact.defence == max(bact.defence, bact.damage, bact.efficiency):
+            defence_bacts_amount += 1
+        if bact.damage == max(bact.defence, bact.damage, bact.efficiency):
+            damage_bacts_amount += 1
+        if bact.efficiency == max(bact.defence, bact.damage, bact.efficiency):
+            efficiency_bacts_amount += 1
+    time_counter += 1
+
+    defence_data.append(defence_bacts_amount)
+    damage_data.append(damage_bacts_amount)
+    efficiency_data.append(efficiency_bacts_amount)
+    time_data.append(time_counter)
+
+    return time_counter
+
+
+def data_for_avg_plot(bacteria_arr):
+    damage_sum = 0
+    defence_sum = 0
+    efficiency_sum = 0
+    for bact in bacteria_arr:
+        defence_sum += bact.defence
+        damage_sum += bact.damage
+        efficiency_sum += bact.efficiency
+
+    if len(bacteria_arr) != 0:
+        average_defence.append(defence_sum/len(bacteria_arr))
+        average_damage.append(damage_sum/len(bacteria_arr))
+        average_efficiency.append(efficiency_sum/len(bacteria_arr))
+    else:
+        average_defence.append(0)
+        average_damage.append(0)
+        average_efficiency.append(0)
+
+
+def draw_plot(defence_data, damage_data, efficiency_data, time_data):
+    sp = plt.subplot(121)
+    plt.plot(time_data, defence_data, time_data, damage_data, time_data, efficiency_data)
+    plt.title(r'amount')
+
+    sp = plt.subplot(122)
+    plt.plot(time_data, average_defence, time_data, average_damage, time_data, average_efficiency)
+    plt.title(r'average')
+    plt.show()
 
 
 def calculate_food_mass_center(x, y):
@@ -130,23 +193,27 @@ for i in range(100):
 while not finished:
     screen.fill(BG_COL)
 
-    pygame.draw.rect(screen, [100, 100, 190], [(0.5 * WIDTH, 0), (0.6 * WIDTH, HEIGHT)], 0)
+    pygame.draw.rect(screen, [100, 100, 170], [(0.5 * WIDTH, 0), (0.6 * WIDTH, HEIGHT)], 0)
     pygame.draw.rect(screen, [100, 100, 210], [(0.6 * WIDTH, 0), (0.7 * WIDTH, HEIGHT)], 0)
-    pygame.draw.rect(screen, [100, 100, 230], [(0.7 * WIDTH, 0), (0.8 * WIDTH, HEIGHT)], 0)
-    pygame.draw.rect(screen, [100, 100, 250], [(0.8 * WIDTH, 0), (0.9 * WIDTH, HEIGHT)], 0)
-    pygame.draw.rect(screen, [100, 100, 255], [(0.9 * WIDTH, 0), (1.0 * WIDTH, HEIGHT)], 0)
+    pygame.draw.rect(screen, [100, 100, 250], [(0.7 * WIDTH, 0), (0.8 * WIDTH, HEIGHT)], 0)
+    pygame.draw.rect(screen, [90, 90, 255], [(0.8 * WIDTH, 0), (0.9 * WIDTH, HEIGHT)], 0)
+    pygame.draw.rect(screen, [80, 80, 255], [(0.9 * WIDTH, 0), (1.0 * WIDTH, HEIGHT)], 0)
     # antibiotic field rectangles
 
-    pygame.draw.rect(screen, [50, 50, 255], [(0.95 * WIDTH, 0), (1.0 * WIDTH, HEIGHT)], 0)
-    pygame.draw.rect(screen, [50, 50, 255], [(0, 0), (0.05 * WIDTH, HEIGHT)], 0)
+    pygame.draw.rect(screen, [30, 30, 255], [(0.95 * WIDTH, 0), (1.0 * WIDTH, HEIGHT)], 0)
+    pygame.draw.rect(screen, [30, 30, 255], [(0, 0), (0.05 * WIDTH, HEIGHT)], 0)
 
-    pygame.draw.rect(screen, [50, 50, 255], [(0, 0), (WIDTH, 0.05 * HEIGHT)], 0)
-    pygame.draw.rect(screen, [50, 50, 255], [(0, 0.95 * HEIGHT), (WIDTH, HEIGHT)], 0)
+    pygame.draw.rect(screen, [30, 30, 255], [(0, 0), (WIDTH, 0.05 * HEIGHT)], 0)
+    pygame.draw.rect(screen, [30, 30, 255], [(0, 0.95 * HEIGHT), (WIDTH, HEIGHT)], 0)
     # antibiotic field on borders
 
     clock.tick(FPS)
     fps_text = main_font.render(str(round(clock.get_fps(), 2)), True, [0, 0, 0])
     screen.blit(fps_text, (10, 10))
+
+    time_counter = data_for_plot(bacteria_arr, time_counter, defence_bacts_amount, damage_bacts_amount, efficiency_bacts_amount)
+    data_for_avg_plot(bacteria_arr)
+    # collecting data for plot
 
     if not paused:
         if len(food_arr) < 200:
@@ -161,6 +228,13 @@ while not finished:
                 food_arr.append(Food(screen, new_food_x, new_food_y))
 
         if len(bacteria_arr) == 0:
+            defence_data = []
+            time_data = []
+            damage_data = []
+            efficiency_data = []
+            average_efficiency = []
+            average_damage = []
+            average_defence = []
             bacteria_arr.append(Bacteria(screen, WIDTH // 2, HEIGHT // 2, 10, 0, 0, 1))
             print("Everyone died. New generation")
         # spawning new generation after dying of previous
@@ -211,7 +285,7 @@ while not finished:
             for food in food_arr:
                 d = ((bact.x - food.x) ** 2 + (bact.y - food.y) ** 2) ** 0.5
                 if d < bact.size + 2:
-                    bact.hunger -= 800 * bact.efficiency
+                    bact.hunger -= 400 * bact.efficiency
                     food_arr.remove(food)
 
             # Bacteria interaction
@@ -292,8 +366,11 @@ while not finished:
             mouse_pos[0] = event.pos[0]
             mouse_pos[1] = event.pos[1]
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
+            if event.key == pygame.K_f:
+                draw_plot(defence_data, damage_data, efficiency_data, time_data)
+            elif event.key == pygame.K_SPACE:
                 paused = True
         elif event.type == pygame.KEYUP:
             if event.key == pygame.K_SPACE:
                 paused = False
+
