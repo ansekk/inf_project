@@ -184,7 +184,7 @@ selected_bact = None
 bacteria_arr.append(Bacteria(screen, WIDTH // 2, HEIGHT // 2, 10, 0, 0, 1))
 main_font = pygame.font.Font(None, 20)
 
-for i in range(100):
+for i in range(200):
     new_food_x = randint(0, WIDTH)
     new_food_y = randint(0, HEIGHT)
 
